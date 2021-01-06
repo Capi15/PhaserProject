@@ -10,7 +10,7 @@ class WorldScene extends Phaser.Scene {
         const tileset2 = map.addTilesetImage('rpg_tileset', 'tiles2');
 
         const world = map.createStaticLayer('world', tileset2, 0, 0);
-        const decoration = map.createStaticLayer('decoration', tileset2, 0, 0);
+        const decoration = map.createStaticLayer('decoration', tileset1, 0, 0);
 
         this.player = this.physics.add.sprite(50, 300, 'player');
         this.player.setCollideWorldBounds(true);
@@ -33,6 +33,40 @@ class WorldScene extends Phaser.Scene {
             key: 'idle',
             frames: [{ key: 'player', frame: 0 }],
             frameRate: 10,
+        });
+
+        this.treesGroup = this.physics.add.group({
+            allowGravity: false,
+            immovable: true,
+        });
+
+        this.house_hitGroup = this.physics.add.group({
+            allowGravity: false,
+            immovable: true,
+        });
+
+        const treeObjects = map.getObjectLayer('dead_trees')['objects'];
+
+        const house_hitObjects = map.getObjectLayer('house_hit')['objects'];
+
+        treeObjects.forEach((treeObject) => {
+            const tree = this.treesGroup
+                .create(treeObject.x, treeObject.y - treeObject.height, 'tree')
+                .setOrigin(0, 0);
+            tree.body.setSize(tree.width, tree.height - 5).setOffset(0, 5);
+        });
+
+        house_hitObjects.forEach((house_hitObject) => {
+            const house_hit = this.house_hitGroup
+                .create(
+                    house_hitObject.x - 30,
+                    house_hitObject.y - house_hitObject.height - 30,
+                    'house_hit'
+                )
+                .setOrigin(0, 0);
+            house_hit.body
+                .setSize(house_hit.width, house_hit.height)
+                .setOffset(0, 0);
         });
     }
 
