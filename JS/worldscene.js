@@ -12,8 +12,46 @@ class WorldScene extends Phaser.Scene {
         const world = map.createStaticLayer('world', tileset2, 0, 0);
         const decoration = map.createStaticLayer('decoration', tileset1, 0, 0);
 
+        //controlo de Vida
+        const vidaImage = this.add.image(20, 20, 'vida').setScale(0.02);
+        const fonte = { font: '16px Arial', fill: '#ffffff' };
+        let vida = 100;
+        let vidaText = this.add.text(40, 10, vida + 'HP', fonte);
+
+        //controlo de Oxigénio
+        const oxigenioImage = this.add
+            .image(120, 20, 'oxigenio')
+            .setScale(0.05);
+        let oxigenio = 100;
+        let oxigenioText = this.add.text(140, 10, oxigenio + '%', fonte);
+
+        //controlo de Temperatura
+        const tempImage = this.add
+            .image(200, 20, 'temperatura')
+            .setScale(0.035);
+        let temperatura = 10;
+        let temperaturaText = this.add.text(220, 10, temperatura + 'ºC', fonte);
+
+        //controlo de dinheiro
+        const moedasImage = this.add.image(290, 20, 'moedas').setScale(0.015);
+        let moedas = 20;
+        let moedasText = this.add.text(320, 10, moedas + '€', fonte);
+
+        //controlo de gerações
+        const geracoesImage = this.add
+            .image(this.cameras.main.width - 130, 20, 'geracoes')
+            .setScale(0.15);
+        let geracoes = 0;
+        let geracoesText = this.add.text(
+            this.cameras.main.width - 100,
+            10,
+            geracoes + ' Gerações',
+            fonte
+        );
+
         this.player = this.physics.add.sprite(50, 300, 'player');
         this.player.setCollideWorldBounds(true);
+        this.player.body.setSize(40, 50);
         this.physics.add.collider(this.player, world);
         this.physics.add.collider(this.player, decoration);
 
@@ -46,6 +84,7 @@ class WorldScene extends Phaser.Scene {
         });
 
         const treeObjects = map.getObjectLayer('dead_trees')['objects'];
+        this.width;
 
         const house_hitObjects = map.getObjectLayer('house_hit')['objects'];
 
@@ -67,6 +106,14 @@ class WorldScene extends Phaser.Scene {
             house_hit.body
                 .setSize(house_hit.width, house_hit.height)
                 .setOffset(0, 0);
+
+            this.physics.add.collider(
+                this.player,
+                this.treesGroup,
+                playerHit,
+                null,
+                this
+            );
         });
     }
 
@@ -96,4 +143,8 @@ class WorldScene extends Phaser.Scene {
             this.player.play('idle', true);
         }
     }
+}
+
+function playerHit(player, tree) {
+    console.log('bateu');
 }

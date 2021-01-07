@@ -13,6 +13,7 @@ class BootScene extends Phaser.Scene {
         this.load.image('oxigenio', 'assets/images/oxygen_icon.png');
         this.load.image('moedas', 'assets/images/coin_icon.png');
         this.load.image('temperatura', 'assets/images/thermomether_icon.png');
+        this.load.image('geracoes', 'assets/images/person_icon.png');
 
         //deve ser carregado com o seu Json
         this.load.spritesheet('player', 'assets/images/Minotaur_sprite.png', {
