@@ -4,6 +4,13 @@ class BootScene extends Phaser.Scene {
     }
 
     preload() {
+        //backgroud do menu
+        this.load.image('background', 'assets/images/background.jpg');
+
+        //imagem dos butões
+        this.load.image('jogar', 'assets/images/jogar.png');
+        this.load.image('instrucoes', 'assets/images/instrucoes.png');
+
         this.load.image('tree', 'assets/images/tree.png');
         this.load.image('dead_tree', 'assets/images/tree.png');
         this.load.image('house_hit', 'assets/images/house_hit.png');
@@ -28,6 +35,6 @@ class BootScene extends Phaser.Scene {
     create() {
         // -- inicia uma nova Scene
         //this.scene.start('MenuScene');
-        this.scene.start('WorldScene');
+        this.scene.start('MenuScene');
     }
 }
