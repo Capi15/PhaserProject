@@ -3,8 +3,6 @@ class MenuScene extends Phaser.Scene {
         super({ key: 'MenuScene' });
     }
 
-    preload() {}
-
     create() {
         const backgroundImage = this.add
             .image(0, -60, 'background')

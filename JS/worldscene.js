@@ -1,5 +1,6 @@
 // Variáveis globais
 let timer;
+let msgTimer;
 let total = 0;
 let vida;
 let oxigenio;
@@ -8,12 +9,22 @@ let moedas;
 let geracoes;
 let fonte;
 
+//Avisos
+let tipoAviso = '';
+let mensagemAviso;
+
 //Variáveis de texto da Barra de estado
 let vidaText;
 let oxigenioText;
 let temperaturaText;
 let moedasText;
 let geracoesText;
+
+let startNewScene;
+let audioOnOff = true;
+let somFundo;
+let playerAnim;
+let keyObj;
 
 class WorldScene extends Phaser.Scene {
     constructor() {
@@ -58,7 +69,7 @@ class WorldScene extends Phaser.Scene {
         const geracoesImage = this.add
             .image(this.cameras.main.width - 130, 20, 'geracoes')
             .setScale(0.15);
-        geracoes = 0;
+        geracoes = 3;
         geracoesText = this.add.text(
             this.cameras.main.width - 100,
             10,
@@ -66,29 +77,18 @@ class WorldScene extends Phaser.Scene {
             fonte
         );
 
-        this.player = this.physics.add.sprite(50, 300, 'player');
-        this.player.setCollideWorldBounds(true);
-        this.player.body.setSize(40, 50);
-        this.physics.add.collider(this.player, world);
-        this.physics.add.collider(this.player, decoration);
+        let soundImage = this.add
+            .image(this.cameras.main.width - 180, 20, 'soundButton')
+            .setScale(0.05)
+            .setInteractive({ useHandCursor: true });
 
-        this.cursors = this.input.keyboard.createCursorKeys();
-
-        this.anims.create({
-            key: 'walk',
-            frames: this.anims.generateFrameNumbers('player', {
-                start: 10,
-                end: 17,
-            }),
-            frameRate: 10,
-            repeat: -1,
-        });
-
-        this.anims.create({
-            key: 'idle',
-            frames: [{ key: 'player', frame: 0 }],
-            frameRate: 10,
-        });
+        soundImage.on(
+            'pointerdown',
+            function (pointer) {
+                playSom();
+            },
+            this
+        );
 
         this.treesGroup = this.physics.add.group({
             allowGravity: false,
@@ -110,13 +110,6 @@ class WorldScene extends Phaser.Scene {
                 .create(treeObject.x, treeObject.y - treeObject.height, 'tree')
                 .setOrigin(0, 0);
             tree.body.setSize(tree.width, tree.height - 5).setOffset(0, 5);
-            this.physics.add.collider(
-                this.player,
-                this.treesGroup,
-                playerHit,
-                null,
-                this
-            );
         });
 
         house_hitObjects.forEach((house_hitObject) => {
@@ -130,13 +123,44 @@ class WorldScene extends Phaser.Scene {
             house_hit.body
                 .setSize(house_hit.width, house_hit.height)
                 .setOffset(0, 0);
-            this.physics.add.collider(
-                this.player,
-                this.house_hitGroup,
-                playerHit,
-                null,
-                this
-            );
+        });
+
+        this.player = this.physics.add.sprite(50, 300, 'player');
+        this.player.setCollideWorldBounds(true);
+        this.player.body.setSize(40, 50);
+        this.physics.add.collider(this.player, world);
+        this.physics.add.collider(this.player, decoration);
+
+        //Musica de Fundo
+        somFundo = this.sound.add('somFundo', { volume: 0.1 }, 1, true);
+        somFundo.play();
+
+        this.cursors = this.input.keyboard.createCursorKeys();
+
+        this.anims.create({
+            key: 'walk',
+            frames: this.anims.generateFrameNumbers('player', {
+                start: 10,
+                end: 17,
+            }),
+            frameRate: 10,
+            repeat: -1,
+        });
+
+        this.anims.create({
+            key: 'cut',
+            frames: this.anims.generateFrameNumbers('player', {
+                start: 21,
+                end: 34,
+            }),
+            frameRate: 10,
+            repeat: -1,
+        });
+
+        this.anims.create({
+            key: 'idle',
+            frames: [{ key: 'player', frame: 0 }],
+            frameRate: 10,
         });
 
         // Inicializar um timer
@@ -145,6 +169,22 @@ class WorldScene extends Phaser.Scene {
             callback: updateStatus,
             loop: true,
         });
+
+        //timer de aviso
+        msgTimer = this.time.addEvent({
+            delay: 500, // ms
+            callback: aviso,
+            loop: true,
+        });
+
+        mensagemAviso = this.add.text(
+            this.cameras.main.width / 2 - 100,
+            this.cameras.main.height / 2,
+            tipoAviso,
+            { font: '18px Arial', fill: '#ffffff' }
+        );
+
+        keyObj = this.input.keyboard.addKey('E');
     }
 
     update() {
@@ -178,8 +218,18 @@ class WorldScene extends Phaser.Scene {
         temperaturaText.text = temperatura + 'ºC';
         moedasText.text = moedas + '€';
         geracoesText.text = geracoes + ' Gerações';
+        mensagemAviso = tipoAviso;
 
-        updateStatusBar();
+        startNewScene = (startNewScene) => {
+            this.scene.start('GameOver', geracoes);
+        };
+
+        aviso();
+
+        keyObj.once('down', function (event) {
+            console.log('E pressed');
+            this.player.anims.play('cut', true);
+        });
     }
 }
 
@@ -190,9 +240,29 @@ function playerHit(player, tree) {
 function updateStatus() {
     vida--;
     oxigenio -= 2;
-    if (vida == 0) {
-        this.game.state.restart();
+    if (vida <= 0 || oxigenio <= 0 || temperatura <= -10 || temperatura >= 50) {
+        startNewScene();
     }
 }
 
-function updateStatusBar() {}
+function aviso() {
+    if (temperatura <= 0) {
+        tipoAviso.text = 'Você está com frio';
+    } else if (temperatura >= 40) {
+        tipoAviso.text = 'Você está com muito calor';
+    } else if (oxigenio <= 20) {
+        tipoAviso.text = 'Você está com pouco oxigenio';
+    } else {
+        tipoAviso = '';
+    }
+}
+
+function playSom() {
+    audioOnOff = !audioOnOff;
+    console.log(audioOnOff);
+    if (audioOnOff) {
+        somFundo.play();
+    } else {
+        somFundo.stop();
+    }
+}
