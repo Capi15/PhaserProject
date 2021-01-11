@@ -4,10 +4,13 @@ class MenuScene extends Phaser.Scene {
     }
 
     create() {
+        //adiciona uma imagem de fundo ao menu
         const backgroundImage = this.add
             .image(0, -60, 'background')
             .setOrigin(0, 0)
             .setScale(1.5);
+
+        //criação do botão jogar
         this.buttonJogar = this.add
             .image(
                 this.cameras.main.width / 2,
@@ -17,7 +20,7 @@ class MenuScene extends Phaser.Scene {
             .setScale(0.5)
             .setInteractive({ useHandCursor: true });
 
-        // -- click no button
+        //click no butão jogar
         this.buttonJogar.once(
             'pointerdown',
             function (pointer) {
@@ -26,6 +29,7 @@ class MenuScene extends Phaser.Scene {
             this
         );
 
+        //adição de um botão de instruções
         this.buttonInstrucoes = this.add
             .image(
                 this.cameras.main.width / 2,
@@ -35,7 +39,7 @@ class MenuScene extends Phaser.Scene {
             .setScale(0.5)
             .setInteractive({ useHandCursor: true });
 
-        // -- click no button
+        //click no butão de instruções
         this.buttonInstrucoes.once(
             'pointerdown',
             function (pointer) {

@@ -1,30 +1,33 @@
 // Variáveis globais
-let timer;
-let msgTimer;
-let total = 0;
-let vida;
-let oxigenio;
-let temperatura;
-let moedas;
-let geracoes;
+
+//timers
+let timer, msgTimer;
+
+//variaveis de valor status
+let vida, oxigenio, temperatura, moedas, geracoes;
+
+//Variáveis de texto da Barra de estado
+let vidaText, oxigenioText, temperaturaText, moedasText, geracoesText;
+
+//fontes de texto
 let fonte;
 
 //Avisos
 let tipoAviso = '';
 let mensagemAviso;
 
-//Variáveis de texto da Barra de estado
-let vidaText;
-let oxigenioText;
-let temperaturaText;
-let moedasText;
-let geracoesText;
-
-let startNewScene;
+// variaveis de audio
 let audioOnOff = true;
 let somFundo;
+
+//variaveis de animação
 let playerAnim;
+
+//variaveis para o teclado
 let keyObj;
+
+//variavel para instanciar o fim do jogo
+let startNewScene;
 
 class WorldScene extends Phaser.Scene {
     constructor() {
@@ -32,11 +35,10 @@ class WorldScene extends Phaser.Scene {
     }
 
     create() {
+        //carregar o mapa
         const map = this.make.tilemap({ key: 'map' });
-
         const tileset1 = map.addTilesetImage('houses_tileset', 'tiles1');
         const tileset2 = map.addTilesetImage('rpg_tileset', 'tiles2');
-
         const world = map.createStaticLayer('world', tileset2, 0, 0);
         const decoration = map.createStaticLayer('decoration', tileset1, 0, 0);
 
@@ -77,6 +79,11 @@ class WorldScene extends Phaser.Scene {
             fonte
         );
 
+        //Musica de Fundo
+        somFundo = this.sound.add('somFundo', { volume: 0.1 }, 1, true);
+        somFundo.play();
+
+        //Imagem e click no Botão de som
         let soundImage = this.add
             .image(this.cameras.main.width - 180, 20, 'soundButton')
             .setScale(0.05)
@@ -90,21 +97,25 @@ class WorldScene extends Phaser.Scene {
             this
         );
 
+        //Grupos
+        //zona de plantação
         this.treesGroup = this.physics.add.group({
             allowGravity: false,
             immovable: true,
         });
 
+        //zona de interação com as casas
         this.house_hitGroup = this.physics.add.group({
             allowGravity: false,
             immovable: true,
         });
 
+        //atribuição de objetos aos seus respetivos layers
         const treeObjects = map.getObjectLayer('dead_trees')['objects'];
         this.width;
-
         const house_hitObjects = map.getObjectLayer('house_hit')['objects'];
 
+        //Para cada grupo:
         treeObjects.forEach((treeObject) => {
             const tree = this.treesGroup
                 .create(treeObject.x, treeObject.y - treeObject.height, 'tree')
@@ -125,18 +136,17 @@ class WorldScene extends Phaser.Scene {
                 .setOffset(0, 0);
         });
 
+        // inicialização do jogador
         this.player = this.physics.add.sprite(50, 300, 'player');
         this.player.setCollideWorldBounds(true);
         this.player.body.setSize(40, 50);
         this.physics.add.collider(this.player, world);
         this.physics.add.collider(this.player, decoration);
 
-        //Musica de Fundo
-        somFundo = this.sound.add('somFundo', { volume: 0.1 }, 1, true);
-        somFundo.play();
-
+        //controlo de teclado
         this.cursors = this.input.keyboard.createCursorKeys();
 
+        //animações
         this.anims.create({
             key: 'walk',
             frames: this.anims.generateFrameNumbers('player', {
@@ -163,7 +173,8 @@ class WorldScene extends Phaser.Scene {
             frameRate: 10,
         });
 
-        // Inicializar um timer
+        // Inicialização dos timers
+        //timer de jogo
         timer = this.time.addEvent({
             delay: 500, // ms
             callback: updateStatus,
@@ -177,6 +188,7 @@ class WorldScene extends Phaser.Scene {
             loop: true,
         });
 
+        //spawn da mensagem de aviso
         mensagemAviso = this.add.text(
             this.cameras.main.width / 2 - 100,
             this.cameras.main.height / 2,
@@ -184,10 +196,12 @@ class WorldScene extends Phaser.Scene {
             { font: '18px Arial', fill: '#ffffff' }
         );
 
+        //adição de uma nova tecla
         keyObj = this.input.keyboard.addKey('E');
     }
 
     update() {
+        //movimentação do jogador
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-200);
             this.player.anims.play('walk', true);
@@ -204,28 +218,30 @@ class WorldScene extends Phaser.Scene {
             this.player.setVelocityY(200);
             this.player.anims.play('walk', true);
         } else {
-            // Se nenhuma tecla for pressionada o jogador mantem-se parado
             this.player.setVelocityX(0);
             this.player.setVelocityY(0);
-            // A animação de 'Idle' apenas é mostrada se o jogador estivar em cima de uma plataforma
-            // senão iria parecer estar parado enquanto saltava
-
             this.player.play('idle', true);
         }
 
+        //atualização dos valores de satatus
         vidaText.text = vida + 'HP';
         oxigenioText.text = oxigenio + '%';
         temperaturaText.text = temperatura + 'ºC';
         moedasText.text = moedas + '€';
         geracoesText.text = geracoes + ' Gerações';
+
+        //atualização do aviso
         mensagemAviso = tipoAviso;
 
+        //termina o jogo
         startNewScene = (startNewScene) => {
             this.scene.start('GameOver', geracoes);
         };
 
+        //executa a mensagem de aviso
         aviso();
 
+        //clique da tecla
         keyObj.once('down', function (event) {
             console.log('E pressed');
             this.player.anims.play('cut', true);
@@ -237,6 +253,7 @@ function playerHit(player, tree) {
     console.log('bateu');
 }
 
+//controlo da barra de status
 function updateStatus() {
     vida--;
     oxigenio -= 2;
@@ -245,6 +262,7 @@ function updateStatus() {
     }
 }
 
+//verificação dos avisos
 function aviso() {
     if (temperatura <= 0) {
         tipoAviso.text = 'Você está com frio';
@@ -257,6 +275,7 @@ function aviso() {
     }
 }
 
+//liga/desliga o som do jogo
 function playSom() {
     audioOnOff = !audioOnOff;
     console.log(audioOnOff);
