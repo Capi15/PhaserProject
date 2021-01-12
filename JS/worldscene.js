@@ -1,13 +1,20 @@
 // Variáveis globais
 
+let teste;
+let teste2;
 //timers
-let timer, msgTimer, animTimer;
+let timer, msgTimer, spawnTree, timeToSpawn;
 
 //variaveis de valor status
-let vida, oxigenio, temperatura, moedas, geracoes;
+let vida, oxigenio, temperatura, moedas, geracoes, arvores;
 
 //Variáveis de texto da Barra de estado
-let vidaText, oxigenioText, temperaturaText, moedasText, geracoesText;
+let vidaText,
+    oxigenioText,
+    temperaturaText,
+    moedasText,
+    geracoesText,
+    arvoresText;
 
 //fontes de texto
 let fonte;
@@ -26,7 +33,12 @@ let playAnimation = false;
 let animTime = 60;
 
 //variaveis para o teclado
-let keyObj;
+let KeyObj2;
+
+//controlo de cliques
+let keyHasBeenPressed = false;
+let hasInteracted = false;
+let canSpawn = false;
 
 //variavel para instanciar o fim do jogo
 let startNewScene;
@@ -42,6 +54,7 @@ let treeObjects, house_hitObjects;
 let treesGroup, treesGroup2, house_hitGroup;
 
 let children;
+let hitPosComer, hitPosComprar, letPosVender;
 
 class WorldScene extends Phaser.Scene {
     constructor() {
@@ -49,6 +62,7 @@ class WorldScene extends Phaser.Scene {
     }
 
     create() {
+        arvores = 0;
         //carregar o mapa
         const map = this.make.tilemap({ key: 'map' });
         const tileset1 = map.addTilesetImage('houses_tileset', 'tiles1');
@@ -81,6 +95,11 @@ class WorldScene extends Phaser.Scene {
         moedas = 20;
         moedasText = this.add.text(320, 10, moedas + '€', fonte);
 
+        //controlo de dinheiro
+        const arvoresImage = this.add.image(390, 20, 'tree').setScale(0.6);
+        arvores = 0;
+        arvoresText = this.add.text(410, 10, arvores + ' arv', fonte);
+
         //controlo de gerações
         const geracoesImage = this.add
             .image(this.cameras.main.width - 130, 20, 'geracoes')
@@ -106,7 +125,7 @@ class WorldScene extends Phaser.Scene {
         soundImage.on(
             'pointerdown',
             function (pointer) {
-                playSom();
+                this.playSom();
             },
             this
         );
@@ -142,12 +161,12 @@ class WorldScene extends Phaser.Scene {
                     treeObject.y - treeObject.height,
                     'soil_icon'
                 )
-                .setOrigin(0, 0)
+
                 .setScale(0.03);
 
             newObj = treesGroup2
                 .create(treeObject.x, treeObject.y - treeObject.height, 'tree')
-                .setOrigin(-10, -10);
+                .setVisible(false);
 
             obj.body.setSize(obj.width, obj.height - 5).setOffset(0, 5);
             newObj.body
@@ -220,8 +239,14 @@ class WorldScene extends Phaser.Scene {
             loop: true,
         });
 
+        timeToSpawn = this.time.addEvent({
+            delay: 3000, // ms
+            callback: this.treeSpawn(),
+            loop: true,
+        });
+
         //adição de uma nova tecla
-        keyObj = this.input.keyboard.addKey('E');
+        KeyObj2 = this.input.keyboard.addKey('E');
 
         let casaComer = this.physics.add
             .image(145, this.cameras.main.height - 50, 'cozinhar_icon')
@@ -245,16 +270,6 @@ class WorldScene extends Phaser.Scene {
 
         casaVender.body.setSize(320, 220);
         this.physics.add.collider(this.player, casaVender);
-
-        this.physics.add.overlap(
-            this.player,
-            house_hitGroup,
-            function () {
-                console.log(house_hitGroup.children);
-            },
-            null,
-            this
-        );
 
         mensagemAviso = this.add.text(
             this.cameras.main.width / 2 - 100,
@@ -293,18 +308,31 @@ class WorldScene extends Phaser.Scene {
         temperaturaText.text = temperatura + 'ºC';
         moedasText.text = moedas + '€';
         geracoesText.text = geracoes + ' Gerações';
+        arvoresText.text = arvores + ' arv';
 
         //spawn da mensagem de aviso
 
         //termina o jogo
         startNewScene = (startNewScene) => {
+            oxigenio = 100;
+            vida = 100;
+            temperatura = 20;
+            arvores = 0;
+            moedas = 20;
+
             this.scene.start('GameOver', geracoes);
+            geracoes = 0;
         };
 
         this.condicoes();
 
         //executa a mensagem de aviso
         this.aviso();
+
+        if (arvores === 10) {
+            geracoes += 1;
+            arvores = 0;
+        }
     }
 
     playerHit(player, tree) {
@@ -314,7 +342,7 @@ class WorldScene extends Phaser.Scene {
     //controlo da barra de status
     updateStatus() {
         vida--;
-        oxigenio -= 2;
+        oxigenio -= 1.5;
         if (
             vida <= 0 ||
             oxigenio <= 0 ||
@@ -352,28 +380,121 @@ class WorldScene extends Phaser.Scene {
         }
     }
 
-    condicoes() {
-        let teste;
-        let posX;
-        let posY;
-        if (this.physics.overlap(this.player, treesGroup)) {
-            //console.log('yei');
+    treeSpawn() {
+        let rnd = 0;
 
+        teste = treesGroup.getChildren();
+        teste2 = treesGroup2.getChildren();
+
+        spawnTree = this.time.addEvent({
+            delay: Math.floor(Math.random() * 100) + 5000, // ms
+            callback: function () {
+                rnd = Math.floor(Math.random() * 11);
+                console.log(rnd);
+                if (teste2[rnd].visible) {
+                    return;
+                } else {
+                    console.log(teste[rnd]);
+                    teste[rnd].setVisible(false);
+                    teste2[rnd].setVisible(true);
+                    if (oxigenio < 80) {
+                        oxigenio += 20;
+                    } else if (oxigenio < 80) {
+                        oxigenio = 100;
+                    }
+
+                    temperatura -= 5;
+                }
+
+                canSpawn = false;
+            },
+            loop: true,
+        });
+    }
+
+    condicoes() {
+        let posX;
+
+        if (
+            this.physics.overlap(this.player, treesGroup) &&
+            this.physics.overlap(this.player, treesGroup2)
+        ) {
             teste = treesGroup.getChildren();
-            posX;
-            posY;
+            teste2 = treesGroup2.getChildren();
+
             for (let i = 0; i < teste.length; i++) {
                 if (this.physics.overlap(this.player, teste[i])) {
-                    posX = teste[i].x;
-                    posY = teste[i].y;
-                    if (keyObj.isDown) {
+                    if (
+                        !teste[i].visible &&
+                        KeyObj2.isDown &&
+                        keyHasBeenPressed === false
+                    ) {
+                        console.log('Qualquer coisa');
+                        arvores += 1;
                         this.player.anims.play('cut', true);
-                        teste[i].destroy();
+                        teste2[i].setVisible(false);
+                        teste[i].setVisible(true);
+                        keyHasBeenPressed = true;
+                    }
+                    if (KeyObj2.isUp) {
+                        keyHasBeenPressed = false;
                     }
                 }
             }
         }
 
-        //if(this.player.posX = )
+        if (this.physics.overlap(this.player, house_hitGroup)) {
+            if (KeyObj2.isUp) {
+                hasInteracted = false;
+            }
+            teste = house_hitGroup.getChildren();
+            for (let i = 0; i < teste.length; i++) {
+                if (this.physics.overlap(this.player, teste[i])) {
+                    posX = teste[i].x;
+                    if (posX > 10 && posX < 300) {
+                        if (KeyObj2.isDown && hasInteracted == false) {
+                            console.log('Pode Comer');
+
+                            if (arvores > 0) {
+                                moedas -= 10;
+                                if (vida < 70) {
+                                    vida += 30;
+                                } else if (vida < 100) {
+                                    vida = 100;
+                                }
+                                oxigenio -= 15;
+                                arvores -= 1;
+                                temperatura += 20;
+                                arvores -= 1;
+                                hasInteracted = true;
+                            }
+                        }
+                    } else if (posX < 800) {
+                        if (KeyObj2.isDown && hasInteracted == false) {
+                            console.log('Pode Comprar');
+                            if (moedas <= 0) {
+                                tipoAviso = 'Você está a zeros';
+                                return;
+                            } else {
+                                arvores += 1;
+                                moedas -= 50;
+                                hasInteracted = true;
+                            }
+                        }
+                    } else if (posX > 800) {
+                        if (KeyObj2.isDown && hasInteracted == false) {
+                            console.log('Pode Vender');
+                            if (arvores <= 0) {
+                                return;
+                            } else {
+                                moedas += 30;
+                                arvores -= 1;
+                                hasInteracted = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -37,7 +37,7 @@ class InstrucoesScene extends Phaser.Scene {
                 '* Comprar árvores gasta 15 moedas.',
                 '* Comer gasta 10 moedas e gasta 15% de oxigenio.',
                 '* Por cada 10 árvores platadas o número de gerações aumenta +1.',
-                '* O jogo termina caso o seu oxigénio, ou a sua vida chegem a 0.',
+                '* O jogo termina caso o seu oxigénio, ou a sua vida chegue a 0.',
             ],
             { font: '16px Arial', fill: '#ffffff' }
         );
