@@ -1,7 +1,7 @@
 // Variáveis globais
 
 //timers
-let timer, msgTimer;
+let timer, msgTimer, animTimer;
 
 //variaveis de valor status
 let vida, oxigenio, temperatura, moedas, geracoes;
@@ -13,7 +13,7 @@ let vidaText, oxigenioText, temperaturaText, moedasText, geracoesText;
 let fonte;
 
 //Avisos
-let tipoAviso = '';
+let tipoAviso;
 let mensagemAviso;
 
 // variaveis de audio
@@ -22,12 +22,26 @@ let somFundo;
 
 //variaveis de animação
 let playerAnim;
+let playAnimation = false;
+let animTime = 60;
 
 //variaveis para o teclado
 let keyObj;
 
 //variavel para instanciar o fim do jogo
 let startNewScene;
+
+//variaveis de colheita
+let temPlatacao,
+    cresceu = false;
+
+let obj;
+let newObj;
+
+let treeObjects, house_hitObjects;
+let treesGroup, treesGroup2, house_hitGroup;
+
+let children;
 
 class WorldScene extends Phaser.Scene {
     constructor() {
@@ -71,7 +85,7 @@ class WorldScene extends Phaser.Scene {
         const geracoesImage = this.add
             .image(this.cameras.main.width - 130, 20, 'geracoes')
             .setScale(0.15);
-        geracoes = 3;
+        geracoes = 0;
         geracoesText = this.add.text(
             this.cameras.main.width - 100,
             10,
@@ -99,32 +113,50 @@ class WorldScene extends Phaser.Scene {
 
         //Grupos
         //zona de plantação
-        this.treesGroup = this.physics.add.group({
+        treesGroup = this.physics.add.group({
+            allowGravity: false,
+            immovable: true,
+        });
+
+        treesGroup2 = this.physics.add.group({
             allowGravity: false,
             immovable: true,
         });
 
         //zona de interação com as casas
-        this.house_hitGroup = this.physics.add.group({
+        house_hitGroup = this.physics.add.group({
             allowGravity: false,
             immovable: true,
         });
 
         //atribuição de objetos aos seus respetivos layers
-        const treeObjects = map.getObjectLayer('dead_trees')['objects'];
-        this.width;
-        const house_hitObjects = map.getObjectLayer('house_hit')['objects'];
+        treeObjects = map.getObjectLayer('dead_trees')['objects'];
+
+        house_hitObjects = map.getObjectLayer('house_hit')['objects'];
 
         //Para cada grupo:
         treeObjects.forEach((treeObject) => {
-            const tree = this.treesGroup
+            obj = treesGroup
+                .create(
+                    treeObject.x,
+                    treeObject.y - treeObject.height,
+                    'soil_icon'
+                )
+                .setOrigin(0, 0)
+                .setScale(0.03);
+
+            newObj = treesGroup2
                 .create(treeObject.x, treeObject.y - treeObject.height, 'tree')
-                .setOrigin(0, 0);
-            tree.body.setSize(tree.width, tree.height - 5).setOffset(0, 5);
+                .setOrigin(-10, -10);
+
+            obj.body.setSize(obj.width, obj.height - 5).setOffset(0, 5);
+            newObj.body
+                .setSize(newObj.width, newObj.height - 5)
+                .setOffset(0, 5);
         });
 
         house_hitObjects.forEach((house_hitObject) => {
-            const house_hit = this.house_hitGroup
+            const house_hit = house_hitGroup
                 .create(
                     house_hitObject.x - 30,
                     house_hitObject.y - house_hitObject.height - 30,
@@ -160,8 +192,8 @@ class WorldScene extends Phaser.Scene {
         this.anims.create({
             key: 'cut',
             frames: this.anims.generateFrameNumbers('player', {
-                start: 21,
-                end: 34,
+                start: 31,
+                end: 35,
             }),
             frameRate: 10,
             repeat: -1,
@@ -177,27 +209,59 @@ class WorldScene extends Phaser.Scene {
         //timer de jogo
         timer = this.time.addEvent({
             delay: 500, // ms
-            callback: updateStatus,
+            callback: this.updateStatus,
             loop: true,
         });
 
         //timer de aviso
         msgTimer = this.time.addEvent({
             delay: 500, // ms
-            callback: aviso,
+            callback: this.aviso,
             loop: true,
         });
 
-        //spawn da mensagem de aviso
+        //adição de uma nova tecla
+        keyObj = this.input.keyboard.addKey('E');
+
+        let casaComer = this.physics.add
+            .image(145, this.cameras.main.height - 50, 'cozinhar_icon')
+            .setImmovable()
+            .setScale(0.5);
+
+        casaComer.body.setSize(320, 220);
+        this.physics.add.collider(this.player, casaComer);
+
+        let casaComprar = this.physics.add
+            .image(495, this.cameras.main.height - 50, 'comprar_icon')
+            .setImmovable()
+            .setScale(0.5);
+        casaComprar.body.setSize(320, 220);
+        this.physics.add.collider(this.player, casaComprar);
+
+        let casaVender = this.physics.add
+            .image(880, this.cameras.main.height - 50, 'vender_icon')
+            .setImmovable()
+            .setScale(0.5);
+
+        casaVender.body.setSize(320, 220);
+        this.physics.add.collider(this.player, casaVender);
+
+        this.physics.add.overlap(
+            this.player,
+            house_hitGroup,
+            function () {
+                console.log(house_hitGroup.children);
+            },
+            null,
+            this
+        );
+
         mensagemAviso = this.add.text(
             this.cameras.main.width / 2 - 100,
             this.cameras.main.height / 2,
             tipoAviso,
             { font: '18px Arial', fill: '#ffffff' }
         );
-
-        //adição de uma nova tecla
-        keyObj = this.input.keyboard.addKey('E');
     }
 
     update() {
@@ -230,58 +294,86 @@ class WorldScene extends Phaser.Scene {
         moedasText.text = moedas + '€';
         geracoesText.text = geracoes + ' Gerações';
 
-        //atualização do aviso
-        mensagemAviso = tipoAviso;
+        //spawn da mensagem de aviso
 
         //termina o jogo
         startNewScene = (startNewScene) => {
             this.scene.start('GameOver', geracoes);
         };
 
+        this.condicoes();
+
         //executa a mensagem de aviso
-        aviso();
-
-        //clique da tecla
-        keyObj.once('down', function (event) {
-            console.log('E pressed');
-            this.player.anims.play('cut', true);
-        });
+        this.aviso();
     }
-}
 
-function playerHit(player, tree) {
-    console.log('bateu');
-}
-
-//controlo da barra de status
-function updateStatus() {
-    vida--;
-    oxigenio -= 2;
-    if (vida <= 0 || oxigenio <= 0 || temperatura <= -10 || temperatura >= 50) {
-        startNewScene();
+    playerHit(player, tree) {
+        console.log('bateu');
     }
-}
 
-//verificação dos avisos
-function aviso() {
-    if (temperatura <= 0) {
-        tipoAviso.text = 'Você está com frio';
-    } else if (temperatura >= 40) {
-        tipoAviso.text = 'Você está com muito calor';
-    } else if (oxigenio <= 20) {
-        tipoAviso.text = 'Você está com pouco oxigenio';
-    } else {
-        tipoAviso = '';
+    //controlo da barra de status
+    updateStatus() {
+        vida--;
+        oxigenio -= 2;
+        if (
+            vida <= 0 ||
+            oxigenio <= 0 ||
+            temperatura <= -10 ||
+            temperatura >= 50
+        ) {
+            startNewScene();
+        }
     }
-}
 
-//liga/desliga o som do jogo
-function playSom() {
-    audioOnOff = !audioOnOff;
-    console.log(audioOnOff);
-    if (audioOnOff) {
-        somFundo.play();
-    } else {
-        somFundo.stop();
+    //verificação dos avisos
+    aviso() {
+        if (temperatura <= 0) {
+            tipoAviso = 'Você está com frio';
+        } else if (temperatura >= 40) {
+            tipoAviso = 'Você está com muito calor';
+        } else if (oxigenio <= 20) {
+            tipoAviso = 'Você está com pouco oxigenio';
+        } else {
+            tipoAviso = '';
+        }
+
+        //atualização do aviso
+        mensagemAviso.text = tipoAviso;
+    }
+
+    //liga/desliga o som do jogo
+    playSom() {
+        audioOnOff = !audioOnOff;
+        console.log(audioOnOff);
+        if (audioOnOff) {
+            somFundo.play();
+        } else {
+            somFundo.stop();
+        }
+    }
+
+    condicoes() {
+        let teste;
+        let posX;
+        let posY;
+        if (this.physics.overlap(this.player, treesGroup)) {
+            //console.log('yei');
+
+            teste = treesGroup.getChildren();
+            posX;
+            posY;
+            for (let i = 0; i < teste.length; i++) {
+                if (this.physics.overlap(this.player, teste[i])) {
+                    posX = teste[i].x;
+                    posY = teste[i].y;
+                    if (keyObj.isDown) {
+                        this.player.anims.play('cut', true);
+                        teste[i].destroy();
+                    }
+                }
+            }
+        }
+
+        //if(this.player.posX = )
     }
 }

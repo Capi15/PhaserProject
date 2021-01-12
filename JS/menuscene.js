@@ -17,7 +17,7 @@ class MenuScene extends Phaser.Scene {
                 this.cameras.main.height / 2 - 100,
                 'jogar'
             )
-            .setScale(0.5)
+            .setScale(0.3)
             .setInteractive({ useHandCursor: true });
 
         //click no butão jogar
@@ -36,7 +36,7 @@ class MenuScene extends Phaser.Scene {
                 this.cameras.main.height / 2 + 100,
                 'instrucoes'
             )
-            .setScale(0.5)
+            .setScale(0.3)
             .setInteractive({ useHandCursor: true });
 
         //click no butão de instruções

@@ -29,9 +29,9 @@ class InstrucoesScene extends Phaser.Scene {
             250,
             150,
             [
-                '* Use as setas do teclado para se movoimentar.',
+                '* Use as setas do teclado para se movimentar.',
                 '* Pressione E junto de uma arvore para a cortar.',
-                '* Dirijase a cada uma das casas para comer, vender árvores, ou comprar árvores.',
+                '* Dirija-se a cada uma das casas para comer, vender árvores, ou comprar árvores.',
                 '* Comer aumenta a sua vida em 30HP.',
                 '* Vender árvores dá 30 moedas.',
                 '* Comprar árvores gasta 15 moedas.',
@@ -42,14 +42,14 @@ class InstrucoesScene extends Phaser.Scene {
             { font: '16px Arial', fill: '#ffffff' }
         );
 
-        //adição do butão volatr
+        //adição do butão voltar
         this.buttonVoltarAoMenu = this.add
             .image(
-                this.cameras.main.width / 2 - 150,
-                this.cameras.main.height - 150,
+                this.cameras.main.width / 2,
+                this.cameras.main.height - 100,
                 'voltar'
             )
-            .setOrigin(0, 0)
+            .setScale(0.6)
             .setInteractive({ useHandCursor: true });
 
         //click no butão de voltar
