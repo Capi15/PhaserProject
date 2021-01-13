@@ -403,7 +403,9 @@ class WorldScene extends Phaser.Scene {
                         oxigenio = 100;
                     }
 
-                    temperatura -= 5;
+                    if (temperatura < 20) {
+                        temperatura -= 5;
+                    }
                 }
 
                 canSpawn = false;
@@ -477,7 +479,12 @@ class WorldScene extends Phaser.Scene {
                                 return;
                             } else {
                                 arvores += 1;
-                                moedas -= 50;
+                                if (moedas <= 0) {
+                                    moedas = 0;
+                                } else {
+                                    moedas -= 50;
+                                }
+
                                 hasInteracted = true;
                             }
                         }
